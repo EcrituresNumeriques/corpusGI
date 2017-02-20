@@ -70,72 +70,53 @@ declare function local:body($node as element(tei:body)) as element() {
   <div lang="la" id="tei-document">{local:dispatch($node/node())}</div>
 };
 
-
-(: 	à utiliser plutôt que fetch:xml
-     charge la base dans $mesData
-
-let $mesData := db:open('html')
- :) 
-
-(:
-return $mesData
-  :)
-
-(:
-let $document := fetch:xml("/home/nicolas/ownCloud/General_instin/data/html/item-010_article642.html", map { 'chop': false() })
-:)
-
-(:
-let $htmlSource := $mesData/html/body/div[@id="contenu"]
-:)
-
-(:
-let $teiOutput := local:dispatch($mesData/html/body/div[@id="contenu"])
-
-return $teiOutput
-:)
+(: 
+ : my own
+ :)
 
 (:~
- : This function writes the XML corpus in a single TEI XML file
- : @return for every text of the corpus append the content and metadata in one XML file named with its id prefixed by "sens-public-" in the $path directory
+ : This function writes multiples TEI-corpus XML file (infine, the objective is to write a single TEI-corpus file)
+ : @return for every item of the inventory, write a file into /TEI/ named after the name of the scrapped html file. 
  :)
 declare function local:writeArticles($refs as map(*)*) as document-node()* {
   let $path := '/home/nicolas/ownCloud/General_instin/data/TEI/'
   for $ref in $refs
   return
-    let $article := db:open("html","item-006_article2998.html")
-    (: let $article := db:open('html','item-' || map:get($ref, 'num') || '_article' || map:get($ref, 'numarticle') || '.html') :)
-    let $file := "item-006_article2998.html.xml"
+    (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
+    let $article := db:open('GIwget','/item-' || map:get($ref, 'num') || '/remue.net/spip.php?article' || map:get($ref, 'numarticle') || '.html')/html
+    (: let $file := "item-006_article2998.html.xml" :)
     (: let $file := 'item-' || map:get($ref, 'num') || '_article' || map:get($ref, 'numarticle') || '-TEI.xml' :)
+    let $file := 'spip.php?article' || map:get($ref, 'numarticle') || '.html.xml'
     let $article := local:getArticle($article, $ref)
     return file:write($path || $file, $article, map { 'method' : 'xml', 'indent' : 'yes', 'omit-xml-declaration' : 'no'}) 
 };
 
 (:~
  : This function builts the article content
- : @param $article the SPIP article
- : @param $ref the article references (id, num, vol, n)
- : @return an xml erudit article segment
- :
- : @todo solve the corps direct constructor by working on getRestruct
- : @todo define ordseq
+ : @param $article the Remue.net article
+ : @param $ref the article references (num, source, numarticle)
+ : @return an xml TEI-corpus segment
+ : Objective : build a proper TEI-corpus segment with all metadatas..
  :)
 declare function local:getArticle( $article as element(), $ref as map(*) ) as element() {
-  let $content := $article/html//div[@id="contenu"]
+  let $content := $article//div[@id="contenu"]
   let $titre := $article/head/title
   let $num :=  map:get($ref, 'num')
-  return $content
+  return <TEI>{
+    $titre,
+    $content
+  }
+  </TEI>
 };
 
 
 
-
 (:~
- : This fuction gets the articles references
+ : This fuction gets the articles references & corpus metadatas
  : @return a map sequence with the article references from the inventaireInstin.xml file
- : @rmq change [1] to the volume you want to transform
  :)
-let $doc := '/home/nicolas/ownCloud/General_instin/data/script/inventaireInstin.xml'
+
+let $doc := '/home/nicolas/ownCloud/General_instin/data/wget/inventaireInstin.xml'
 
 let $refs := for $item in fn:doc($doc)/inventaire/item
 return map {
