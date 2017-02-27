@@ -100,12 +100,43 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
  :)
 declare function local:getArticle( $article as element(), $ref as map(*) ) as element() {
   let $content := $article//div[@id="contenu"]
-  let $titre := $article/head/title
+  let $titre := <title>{map:get($ref, 'title')}</title>  
+  let $author := <author>{map:get($ref, 'author')}</author>
   let $num :=  map:get($ref, 'num')
-  return <TEI>{
-    $titre,
-    $content
-  }
+  let $urlSource := <source><a href="{map:get($ref, 'urlSource')}"/></source>
+  let $geoloc :=  <place><placeName>{map:get($ref, 'geoloc')}</placeName></place>
+  let $datePublication := <date when="{map:get($ref, 'datePublication')}"/>
+  let $dateCreation := <date when="{map:get($ref, 'dateCreation')}" type="creation"/>
+  let $dateArchive := <date when="{map:get($ref, 'dateArchive')}" type="archive"/>
+  let $description := <p>{map:get($ref,'description')}</p>
+  return <TEI xml:id="item-{$num}">
+  <teiHeader>
+  <fileDesc>
+                 <titleStmt>
+                     {$titre}
+                     {$author}
+                 </titleStmt>
+                 <publicationStmt>
+                     {$datePublication}
+                     {$urlSource}
+                     {$geoloc}
+                 </publicationStmt>
+                 <sourceDesc>
+                     {$description}
+                     <keywords>
+                         <term></term>
+                     </keywords>
+                     {$dateCreation}
+                     <material>digital</material>
+                     {$dateArchive}
+                 </sourceDesc>
+             </fileDesc>
+             </teiHeader>
+    <text>
+      <body>
+        {$content}
+      </body>
+    </text>
   </TEI>
 };
 
@@ -116,13 +147,23 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
  : @return a map sequence with the article references from the inventaireInstin.xml file
  :)
 
-let $doc := '/home/nicolas/ownCloud/General_instin/data/wget/inventaireInstin.xml'
+let $doc := '/home/nicolas/ownCloud/General_instin/data/INSTIN_inventaire.xml'
 
 let $refs := for $item in fn:doc($doc)/inventaire/item
 return map {
-  'num' : fn:data($item/num),
-  'source' : fn:data($item/source),
-  'numarticle' : fn:data($item/article)
+  'num' : fn:data($item/@id),
+  'author' : fn:data($item/author),
+  'urlSource' : fn:data($item/urlSource),
+  'geoloc' : fn:data($item/geoloc),
+  'urlRef' : fn:data($item/urlRef),
+  'description' : fn:data($item/description),
+  'keywords' : fn:data($item/keywords),
+  'dateCreation' : fn:data($item/dateCreation),
+  'datePublication' : fn:data($item/datePublication),
+  'dateArchive' : fn:data($item/dateArchive),
+  'corpus' : fn:data($item/corpus),
+  'materiality' : fn:data($item/materiality),
+  'sourceWebsite' : fn:data($item/sourceWebsite)
   }
 
 
