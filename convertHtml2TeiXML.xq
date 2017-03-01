@@ -83,11 +83,13 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
-    (: /remue.net/spip.php?article' || map:get($ref, 'numarticle') :) 
-    let $article := db:open('GIwget','/item-' || map:get($ref, 'num') || fn:substring-after(map:get($ref, 'urlSource'),'http:/') || '.html')/html
+    (: /remue.net/spip.php?article' || map:get($ref, 'numarticle') :)
+    (: || fn:substring-after(map:get($ref, 'urlSource'),'http:/') || '.html' :) 
+    let $article := db:open('GIwget','/item-' || map:get($ref, 'num') )/html
     (: let $file := "item-006_article2998.html.xml" :)
     (: let $file := 'item-' || map:get($ref, 'num') || '_article' || map:get($ref, 'numarticle') || '-TEI.xml' :)
-    let $file := 'item-' || map:get($ref, 'num') || '_' || map:get($ref, 'sourceWebsite') || '_' || fn:substring-after(map:get($ref, 'urlSource'), map:get($ref, 'sourceWebsite') || '/') || '.html.xml'
+    (: prévoir ici différents cas de figure selon la source : generalinstin != remue.net :)
+    let $file := 'item-' || map:get($ref, 'num') || '_' || map:get($ref, 'sourceWebsite') || '_' || local:makeFileName($ref) || '.html.xml'
     let $article := local:getArticle($article, $ref)
     return file:write($path || $file, $article, map { 'method' : 'xml', 'indent' : 'yes', 'omit-xml-declaration' : 'no'}) 
 };
@@ -100,7 +102,7 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
  : Objective : build a proper TEI-corpus segment with all metadatas..
  :)
 declare function local:getArticle( $article as element(), $ref as map(*) ) as element() {
-  let $content := $article//div[@id="contenu"]
+  let $content := local:getContent($article, $ref)  
   let $titre := <title>{map:get($ref, 'title')}</title>  
   let $author := <author>{map:get($ref, 'author')}</author>
   let $num :=  map:get($ref, 'num')
@@ -139,6 +141,36 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
       </body>
     </text>
   </TEI>
+};
+
+
+(:~
+ : This function get the article content according to the source website
+ : @param $article the document item
+ : @param $ref the item metadatas from inventaire (num, source, etc.)
+ : @return the body in xml TEI-corpus
+ :)
+declare function local:getContent( $article as element(), $ref as map(*) ) as element() {
+  let $sourceWebsite := map:get($ref, 'sourceWebsite')
+  return switch($sourceWebsite)
+    case 'remue.net' return $article//div[@id="contenu"]
+    case 'www.generalinstin.net' return $article//article/div[@class="entry-content"]
+    default return ()
+};
+
+(:~
+ : This function constructs the file name to be written according to the source website
+ : @param $ref the item metadatas from inventaire (num, source, etc.)
+ : @return the file Name
+ :)
+
+declare function local:makeFileName( $ref as map(*) ){
+  let $sourceWebsite := map:get($ref, 'sourceWebsite')
+  let $urlSource := map:get($ref, 'urlSource')
+  return switch($sourceWebsite)
+   case 'remue.net' return fn:substring-after(map:get($ref, 'urlSource'), map:get($ref, 'sourceWebsite') || '/')
+   case 'www.generalinstin.net' return fn:replace(fn:substring-after(map:get($ref, 'urlSource'), map:get($ref, 'sourceWebsite') || '/') , '/' , '_')
+   default return ()
 };
 
 
