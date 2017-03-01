@@ -83,10 +83,11 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
-    let $article := db:open('GIwget','/item-' || map:get($ref, 'num') || '/remue.net/spip.php?article' || map:get($ref, 'numarticle') || '.html')/html
+    (: /remue.net/spip.php?article' || map:get($ref, 'numarticle') :) 
+    let $article := db:open('GIwget','/item-' || map:get($ref, 'num') || fn:substring-after(map:get($ref, 'urlSource'),'http:/') || '.html')/html
     (: let $file := "item-006_article2998.html.xml" :)
     (: let $file := 'item-' || map:get($ref, 'num') || '_article' || map:get($ref, 'numarticle') || '-TEI.xml' :)
-    let $file := 'spip.php?article' || map:get($ref, 'numarticle') || '.html.xml'
+    let $file := 'item-' || map:get($ref, 'num') || '_' || map:get($ref, 'sourceWebsite') || '_' || fn:substring-after(map:get($ref, 'urlSource'), map:get($ref, 'sourceWebsite') || '/') || '.html.xml'
     let $article := local:getArticle($article, $ref)
     return file:write($path || $file, $article, map { 'method' : 'xml', 'indent' : 'yes', 'omit-xml-declaration' : 'no'}) 
 };
