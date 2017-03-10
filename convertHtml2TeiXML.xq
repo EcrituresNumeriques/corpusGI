@@ -112,6 +112,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $dateCreation := <date when="{map:get($ref, 'dateCreation')}" type="creation"/>
   let $dateArchive := <date when="{map:get($ref, 'dateArchive')}" type="archive"/>
   let $description := <p>{map:get($ref,'description')}</p>
+  let $category := <category>{map:get($ref,'categoryWebsite')}</category>
   return <TEI xml:id="item-{$num}">
   <teiHeader>
   <fileDesc>
@@ -122,6 +123,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
                  <publicationStmt>
                      {$datePublication}
                      {$urlSource}
+                     {$category}
                      {$geoloc}
                  </publicationStmt>
                  <sourceDesc>
@@ -186,6 +188,7 @@ let $refs := for $item in fn:doc($doc)/inventaire/item
 return map {
   'num' : fn:data($item/@id),
   'author' : fn:data($item/author),
+  'title' : fn:data($item/title),
   'urlSource' : fn:data($item/urlSource),
   'geoloc' : fn:data($item/geoloc),
   'urlRef' : fn:data($item/urlRef),
@@ -196,7 +199,8 @@ return map {
   'dateArchive' : fn:data($item/dateArchive),
   'corpus' : fn:data($item/corpus),
   'materiality' : fn:data($item/materiality),
-  'sourceWebsite' : fn:data($item/sourceWebsite)
+  'sourceWebsite' : fn:data($item/sourceWebsite),
+  'categoryWebsite' : fn:data($item/categoryWebsite)
   }
 
 
