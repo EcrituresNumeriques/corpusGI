@@ -86,7 +86,6 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
     (: /remue.net/spip.php?article' || map:get($ref, 'numarticle') :)
     (: || fn:substring-after(map:get($ref, 'urlSource'),'http:/') || '.html' :) 
     let $article := db:open('GIwget','/item-' || map:get($ref, 'num') )/html
-    (: let $file := "item-006_article2998.html.xml" :)
     (: let $file := 'item-' || map:get($ref, 'num') || '_article' || map:get($ref, 'numarticle') || '-TEI.xml' :)
     (: prévoir ici différents cas de figure selon la source : generalinstin != remue.net :)
     let $file := 'item-' || map:get($ref, 'num') || '_' || map:get($ref, 'sourceWebsite') || '_' || local:makeFileName($ref) || '.html.xml'
@@ -105,6 +104,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $content := local:getContent($article, $ref)  
   let $titre := <title>{map:get($ref, 'title')}</title>  
   let $author := <author>{map:get($ref, 'author')}</author>
+  let $publisher := <publisher>{map:get($ref, 'sourceWebsite')}</publisher>
   let $num :=  map:get($ref, 'num')
   let $urlSource := <source><a href="{map:get($ref, 'urlSource')}"/></source>
   let $geoloc :=  <place><placeName>{map:get($ref, 'geoloc')}</placeName></place>
@@ -113,14 +113,17 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $dateArchive := <date when="{map:get($ref, 'dateArchive')}" type="archive"/>
   let $description := <p>{map:get($ref,'description')}</p>
   let $category := <category>{map:get($ref,'categoryWebsite')}</category>
-  return <TEI xml:id="item-{$num}">
-  <teiHeader>
-  <fileDesc>
+  return 
+  <TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="item-{$num}" >
+     <teiHeader>
+        <fileDesc>
                  <titleStmt>
                      {$titre}
                      {$author}
+                     <!-- respStmt à ajouter -->
                  </titleStmt>
                  <publicationStmt>
+                     {$publisher}
                      {$datePublication}
                      {$urlSource}
                      {$category}
