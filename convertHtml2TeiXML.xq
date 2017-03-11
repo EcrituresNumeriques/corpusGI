@@ -1,9 +1,17 @@
 xquery version "3.1";
 
-declare namespace tei = "http://www.tei-c.org/ns/1.0";
-declare namespace html = "";
+
+(:declare default element namespace 'http://www.tei-c.org/ns/1.0' ;
+:)
+(:
+declare namespace tei = "http://www.tei-c.org/ns/1.0" ;
+:)
+
+declare namespace html = "http://www.w3.org/1999/xhtml";
+
 
 declare default function namespace 'local' ;
+
 
 (: XQuery for converting HTML to TEI XML :)
 declare function local:dispatch($nodes as node()*) as item()* {
@@ -11,12 +19,12 @@ declare function local:dispatch($nodes as node()*) as item()* {
   return
   typeswitch($node)
   case text() return $node
-(:  case element(tei:s) return local:s($node):)
+(:  case element(s) return local:s($node):)
   case element(p) return local:p($node)
-(:  case element(tei:hi) return local:hi($node)
-  case element(tei:quote) return local:quote($node)
-  case element(tei:q) return local:q($node)
-  case element(tei:body) return local:body($node) :)
+(:  case element(hi) return local:hi($node)
+  case element(quote) return local:quote($node)
+  case element(q) return local:q($node)
+  case element(body) return local:body($node) :)
   default return local:passthru($node)
 };
 
@@ -26,7 +34,7 @@ declare function local:passthru($node as node()*) as item()* {
 };
 
 (: <s> to <span> with attributes :)
-declare function local:s($node as element(tei:s)) as element() {
+declare function local:s($node as element(s)) as element() {
   let $sentence := $node/@n
   return
   <span data-sentence="{$sentence}">{local:dispatch($node/node())}</span>
@@ -40,7 +48,7 @@ declare function local:p($node as element(p)) as element() {
 };
 
 (: <hi> to <b>, <i>, or <span> :)
-declare function local:hi($node as element(tei:hi)) as element() {
+declare function local:hi($node as element(hi)) as element() {
   let $rend := $node/@rend
   return
   if ($rend = 'bold') then
@@ -51,7 +59,7 @@ declare function local:hi($node as element(tei:hi)) as element() {
     <span>{local:dispatch($node/node())}</span>
 };
 (: <quote> to <span> :)
-declare function local:quote($node as element(tei:quote)) as element() {
+declare function local:quote($node as element(quote)) as element() {
   let $rend := $node/@rend
   return
   if ($rend = 'blockquote') then
@@ -61,12 +69,12 @@ declare function local:quote($node as element(tei:quote)) as element() {
 };
 
 (: <q> to quote :)
-declare function local:q($node as element(tei:q)) as element() {
+declare function local:q($node as element(q)) as element() {
   <span class="quotes">&#8216;{local:dispatch($node/node())}&#8217;</span>
 };
 
 (: <body> to <div> with id attribute :)
-declare function local:body($node as element(tei:body)) as element() {
+declare function local:body($node as element(body)) as element() {
   <div lang="la" id="tei-document">{local:dispatch($node/node())}</div>
 };
 
@@ -79,7 +87,7 @@ declare function local:body($node as element(tei:body)) as element() {
  : @return for every item of the inventory, write a file into /TEI/ named after the name of the scrapped html file. 
  :)
 declare function local:writeArticles($refs as map(*)*) as document-node()* {
-  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI/'
+  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI2/'
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
@@ -114,12 +122,12 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $description := <p>{map:get($ref,'description')}</p>
   let $category := <category>{map:get($ref,'categoryWebsite')}</category>
   return 
-  <TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="item-{$num}" >
+  <TEI xml:id="item-{$num}" >
      <teiHeader>
         <fileDesc>
                  <titleStmt>
-                     {$titre}
-                     {$author}
+                     {$titre} (:devrait être le titre de l'archive:)
+                     {$author} (:devrait être nous, et pourquoi pas GI..?:)
                      <!-- respStmt à ajouter -->
                  </titleStmt>
                  <publicationStmt>
@@ -129,6 +137,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
                      {$category}
                      {$geoloc}
                  </publicationStmt>
+                 (: sourceDesc sert à décrire la source. Si document nativement numérique, on peut mettre "nativement numérique":)
                  <sourceDesc>
                      {$description}
                      <keywords>
@@ -158,8 +167,8 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
 declare function local:getContent( $article as element(), $ref as map(*) ) as element() {
   let $sourceWebsite := map:get($ref, 'sourceWebsite')
   return switch($sourceWebsite)
-    case 'remue.net' return $article//div[@id="contenu"]
-    case 'www.generalinstin.net' return $article//article/div[@class="entry-content"]
+    case 'remue.net' return $article//html:div[@id="contenu"]
+    case 'www.generalinstin.net' return $article//article/html:div[@class="entry-content"]
     default return ()
 };
 
