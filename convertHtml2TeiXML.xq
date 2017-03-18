@@ -5,10 +5,8 @@ xquery version "3.1";
 :)
 (:
 declare namespace tei = "http://www.tei-c.org/ns/1.0" ;
-:)
-
 declare namespace html = "http://www.w3.org/1999/xhtml";
-
+:)
 
 declare default function namespace 'local' ;
 
@@ -102,8 +100,8 @@ declare function local:writeArticles($refs as map(*)*) as document-node()* {
 };
 
 (:~
- : This function builts the article content
  : @param $article the Remue.net article
+ : This function builts the article content
  : @param $ref the article references (num, source, numarticle)
  : @return an xml TEI-corpus segment
  : Objective : build a proper TEI-corpus segment with all metadatas..
@@ -137,7 +135,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
                      {$category}
                      {$geoloc}
                  </publicationStmt>
-                 (: sourceDesc sert à décrire la source. Si document nativement numérique, on peut mettre "nativement numérique":)
+                 <!-- sourceDesc sert à décrire la source. Si document nativement numérique, on peut mettre "nativement numérique" -->
                  <sourceDesc>
                      {$description}
                      <keywords>
@@ -167,8 +165,8 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
 declare function local:getContent( $article as element(), $ref as map(*) ) as element() {
   let $sourceWebsite := map:get($ref, 'sourceWebsite')
   return switch($sourceWebsite)
-    case 'remue.net' return $article//html:div[@id="contenu"]
-    case 'www.generalinstin.net' return $article//article/html:div[@class="entry-content"]
+    case 'remue.net' return $article//div[@id="contenu"]
+    case 'www.generalinstin.net' return $article//article/div[@class="entry-content"]
     default return ()
 };
 
@@ -196,7 +194,7 @@ declare function local:makeFileName( $ref as map(*) ){
 
 let $doc := '/home/nicolas/ownCloud/General_instin/data/INSTIN_inventaire.xml'
 
-let $refs := for $item in fn:doc($doc)/inventaire/item
+let $refs := for $item in fn:doc($doc)/inventaire/itemGI
 return map {
   'num' : fn:data($item/@id),
   'author' : fn:data($item/author),
