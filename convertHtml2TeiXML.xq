@@ -85,7 +85,7 @@ declare function local:body($node as element(body)) as element() {
  : @return for every item of the inventory, write a file into /TEI/ named after the name of the scrapped html file. 
  :)
 declare function local:writeArticles($refs as map(*)*) as document-node()* {
-  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI2/'
+  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI3/'
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
@@ -110,42 +110,74 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $content := local:getContent($article, $ref)  
   let $titre := <title>{map:get($ref, 'title')}</title>  
   let $author := <author>{map:get($ref, 'author')}</author>
-  let $publisher := <publisher>{map:get($ref, 'sourceWebsite')}</publisher>
+  let $urlSource := <ref target="{map:get($ref, 'urlSource')}"/>
+  let $publisher := <publisher>{$urlSource}<name>{map:get($ref, 'sourceWebsite')}</name></publisher>
   let $num :=  map:get($ref, 'num')
-  let $urlSource := <source><a href="{map:get($ref, 'urlSource')}"/></source>
   let $geoloc :=  <place><placeName>{map:get($ref, 'geoloc')}</placeName></place>
   let $datePublication := <date when="{map:get($ref, 'datePublication')}"/>
   let $dateCreation := <date when="{map:get($ref, 'dateCreation')}" type="creation"/>
   let $dateArchive := <date when="{map:get($ref, 'dateArchive')}" type="archive"/>
   let $description := <p>{map:get($ref,'description')}</p>
-  let $category := <category>{map:get($ref,'categoryWebsite')}</category>
+  let $category := local:getCategory($article, $ref)
+  let $listKeywords := <list><item>{local:getKeywords($article, $ref)}</item></list>
   return 
   <TEI xml:id="item-{$num}" >
      <teiHeader>
         <fileDesc>
                  <titleStmt>
-                     {$titre} (:devrait être le titre de l'archive:)
-                     {$author} (:devrait être nous, et pourquoi pas GI..?:)
-                     <!-- respStmt à ajouter -->
+                     {$titre} <!-- titre de la page archivée -->
+                     {$author}<!-- auteur de la page archivée -->
+                     <respStmt>
+                        <resp>Encodé par</resp>
+                        <name xml:id="JN">Servanne Monjour</name>
+                        <name xml:id="GE">Nicolas Sauret</name>
+                      </respStmt>
+                      <sponsor>CRC sur les écritures numériques</sponsor>
                  </titleStmt>
                  <publicationStmt>
-                     {$publisher}
+                     {$publisher} <!-- site source avec name et ref pour url-->
                      {$datePublication}
-                     {$urlSource}
-                     {$category}
                      {$geoloc}
                  </publicationStmt>
                  <!-- sourceDesc sert à décrire la source. Si document nativement numérique, on peut mettre "nativement numérique" -->
                  <sourceDesc>
                      {$description}
-                     <keywords>
-                         <term></term>
-                     </keywords>
                      {$dateCreation}
-                     <material>digital</material>
+                     <material>digital native</material>
                      {$dateArchive}
                  </sourceDesc>
              </fileDesc>
+             <encodingDesc> <!-- où on déclare les catégories : rubriques de sites web -->
+                <classDecl>
+                  <taxonomy xml:id="siteRubrique">
+                    <category xml:id="remue_net_traits">
+                       <catDesc>Les traits</catDesc>
+                    </category>
+                    <category xml:id="remue_net_generales">
+                       <catDesc>Les générales</catDesc>
+                    </category>
+                    <category xml:id="remue_net_reels">
+                       <catDesc>Les réels</catDesc>
+                    </category>
+                    <category xml:id="remue_net_noms">
+                       <catDesc>Les noms</catDesc>
+                    </category>
+                    <category xml:id="generalInstin_climax">
+                       <catDesc>Climax</catDesc>
+                    </category>         
+                  </taxonomy> 
+                  <taxonomy xml:id="generalinstin_fr">              
+                  </taxonomy> 
+                </classDecl>
+              </encodingDesc>
+              <profileDesc> <!-- on décrit l item avec nos mots-clés et la rubrique du site -->
+                <textClass>
+                   <keywords scheme="#archive">
+                      {$listKeywords}
+                   </keywords>
+                   <catRef target="{$category}"/>
+                  </textClass>
+              </profileDesc> 
              </teiHeader>
     <text>
       <body>
@@ -170,6 +202,39 @@ declare function local:getContent( $article as element(), $ref as map(*) ) as el
     default return ()
 };
 
+
+(:~
+ : This function retrieves the keywords of an item in the inventaire
+ : @param $article one item in the inventaire
+ : @param $ref the item metadatas from inventaire (num, source, etc.)
+ : @return the keywords separated by comma
+ : TODO : séparer les keywords et les mettre dans une balise <item> 
+        : dans ce cas, la fonction retournera une séquence element()* 
+ :)
+declare function local:getKeywords( $article as element(), $ref as map(*) )  {
+  let $keywords := map:get($ref, 'keywords')
+  return $keywords 
+};
+
+(:~
+ : This function tests the rubrique of the source and return the id of the taxonomy
+ : @param $article one item in the inventaire
+ : @param $ref the item metadatas from inventaire (num, source, etc.)
+ : @return the id of the taxonomy
+ :)
+declare function local:getCategory( $article as element(), $ref as map(*) )  {
+  let $category := map:get($ref,'categoryWebsite')
+  return switch($category)
+    case 'les traits' return "#remue_net_traits"
+    case 'les générales' return "#remue_net_generales"
+    case 'les noms' return "#remue_net_noms"
+    case 'les réels' return "#remue_net_reels"
+    case 'Climax' return "#generalInstin_climax"
+    default return ()
+};
+
+
+
 (:~
  : This function constructs the file name to be written according to the source website
  : @param $ref the item metadatas from inventaire (num, source, etc.)
@@ -184,6 +249,7 @@ declare function local:makeFileName( $ref as map(*) ){
    case 'www.generalinstin.net' return fn:replace(fn:substring-after(map:get($ref, 'urlSource'), map:get($ref, 'sourceWebsite') || '/') , '/' , '_')
    default return ()
 };
+
 
 
 
