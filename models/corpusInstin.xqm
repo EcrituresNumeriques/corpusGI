@@ -37,8 +37,8 @@ declare function getItems($queryParams as map(*)) as map(*) {
   (: let $itemsGI := synopsx.models.synopsx:getDb($queryParams)//tei:TEI :)
   let $itemsGI := db:open('instin')//*:TEI
   let $meta := map{
-    'title' : 'Liste d’items',
-    'all' : $itemsGI
+    'title' : 'Liste d’items'
+    (: 'all' : $itemsGI :)
     (: 'keywords' : $itemsGI//erudit:liminaire/erudit:grmotcle/erudit:motcle/text() :)
     }
   let $content := for $itemGI in $itemsGI return map {

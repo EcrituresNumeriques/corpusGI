@@ -1,6 +1,5 @@
 xquery version "3.1";
 
-
 (:declare default element namespace 'http://www.tei-c.org/ns/1.0' ;
 :)
 (:
@@ -21,8 +20,9 @@ declare function local:dispatch($nodes as node()*) as item()* {
   case element(p) return local:p($node)
 (:  case element(hi) return local:hi($node)
   case element(quote) return local:quote($node)
-  case element(q) return local:q($node)
+  case element(q) return local:q($node) 
   case element(body) return local:body($node) :)
+  case element(div) return local:div($node)
   default return local:passthru($node)
 };
 
@@ -41,8 +41,17 @@ declare function local:s($node as element(s)) as element() {
 (: <p> to <p> with attributes :)
 declare function local:p($node as element(p)) as element() {
   let $paragraph := $node/@n
+  return 
+    <p>{local:dispatch($node/node())}</p>
+  (: <p data-paragraph="{$paragraph}">{local:dispatch($node/node())}</p> :)
+};
+
+(: <div> to <div> with attributes :)
+declare function local:div($node as element(div)) as element() {
+  let $class := $node/@class
+  let $id := $node/@id
   return
-  <p data-paragraph="{$paragraph}">{local:dispatch($node/node())}</p>
+  <div class="{$class}" id="{$id}">{local:dispatch($node/node())}</div>
 };
 
 (: <hi> to <b>, <i>, or <span> :)
@@ -85,7 +94,7 @@ declare function local:body($node as element(body)) as element() {
  : @return for every item of the inventory, write a file into /TEI/ named after the name of the scrapped html file. 
  :)
 declare function local:writeArticles($refs as map(*)*) as document-node()* {
-  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI3/'
+  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI4/'
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
@@ -180,6 +189,15 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
               </profileDesc> 
              </teiHeader>
     <text>
+      <front>
+        <titlePage>
+          <docTitle>
+            <titlePart>
+              {$titre/text()}
+            </titlePart>
+            </docTitle>
+        </titlePage>
+      </front>
       <body>
         {$content}
       </body>
@@ -197,8 +215,8 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
 declare function local:getContent( $article as element(), $ref as map(*) ) as element() {
   let $sourceWebsite := map:get($ref, 'sourceWebsite')
   return switch($sourceWebsite)
-    case 'remue.net' return $article//div[@id="contenu"]
-    case 'www.generalinstin.net' return $article//article/div[@class="entry-content"]
+    case 'remue.net' return local:dispatch($article//div[@id="contenu"])
+    case 'www.generalinstin.net' return local:dispatch($article//article/div[@class="entry-content"])
     default return ()
 };
 
