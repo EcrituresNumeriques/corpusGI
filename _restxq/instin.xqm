@@ -74,6 +74,7 @@ function home() {
     'layout'  : 'home.xhtml',
     'pattern' : 'pattern.xhtml',
     'xquery'  : 'teiInstin2html'
+(:        'xsl':'tei2html':)
     }  
  return synopsx.models.synopsx:htmlDisplay($queryParams, $outputParams)
  (: return $data :)
