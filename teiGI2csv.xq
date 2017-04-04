@@ -85,6 +85,8 @@ let $toBeCsv :=  <itemList>{
     let $author := $item//author
     let $date := fn:string($item//publicationStmt/date/@when)
     let $rubrique := map:get($rubriques, fn:data($item//profileDesc[1]/textClass[1]/catRef[1]/@target))
+    let $thumbnail := map:get($images,   fn:data($item/@xml:id))
+    
   return 
   <item>
     <year>{fn:substring($date,1,4)}</year>
@@ -102,7 +104,7 @@ let $toBeCsv :=  <itemList>{
     <mediaCredit></mediaCredit>
     <mediaCaption></mediaCaption>
     <type></type>
-    <mediaThumbnail></mediaThumbnail>
+    <mediaThumbnail>{$thumbnail}</mediaThumbnail>
     <Group>{$rubrique}</Group>
     <background></background>
   </item>
@@ -117,5 +119,5 @@ let $output := csv:serialize($toBeCsv, $options)
 
 (: écrit les données dans un fichier CSV :)
 return 
-    file:write-text("/home/nicolas/ownCloud/General_instin/data/script/teicsv2.csv", $output)
-  
+    file:write-text("/Users/servannemonjour/ownCloud/General_instin/data/script/teicsv2.csv", $output)
+
