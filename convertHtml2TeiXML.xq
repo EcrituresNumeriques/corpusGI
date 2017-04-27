@@ -1,11 +1,11 @@
 xquery version "3.1";
 
-(:declare default element namespace 'http://www.tei-c.org/ns/1.0' ;
-:)
-(:
+(: declare default element namespace 'http://www.tei-c.org/ns/1.0' ; :)
+
+
 declare namespace tei = "http://www.tei-c.org/ns/1.0" ;
 declare namespace html = "http://www.w3.org/1999/xhtml";
-:)
+
 
 declare default function namespace 'local' ;
 
@@ -18,11 +18,17 @@ declare function local:dispatch($nodes as node()*) as item()* {
   case text() return $node
 (:  case element(s) return local:s($node):)
   case element(p) return local:p($node)
+  case element(a) return local:a($node)
+  case element(i) return local:i($node)
+  case element(b) return local:b($node)
+  case element(em) return local:em($node)
+  case element(strong) return local:strong($node)
+  case element(br) return local:br($node)
 (:  case element(hi) return local:hi($node)
-  case element(quote) return local:quote($node)
   case element(q) return local:q($node) 
   case element(body) return local:body($node) :)
-  case element(div) return local:div($node)
+  case element(blockquote) return local:quote($node)
+  case element(html:div) return local:div($node)
   default return local:passthru($node)
 };
 
@@ -39,22 +45,55 @@ declare function local:s($node as element(s)) as element() {
 };
 
 (: <p> to <p> with attributes :)
-declare function local:p($node as element(p)) as element() {
-  let $paragraph := $node/@n
-  return 
+declare function local:p($node as element(p)) as element() {  
+  
+    (: <p>POUET123</p> :)
     <p>{local:dispatch($node/node())}</p>
   (: <p data-paragraph="{$paragraph}">{local:dispatch($node/node())}</p> :)
 };
 
+(: <a> to <ref target=""> with attributes :)
+declare function local:a($node as element(a)) as element() {  
+    let $target := $node/@href
+    let $target := 
+      if ($node[@class='spip_in']) then ('http://remue.net/' || $target) 
+      else if (fn:starts-with($target,'..')) then ('http://www.generalinstin.net/' || fn:substring-after($target,'../'))
+      else $target
+    let $title := if ($node/@title) then $node/@title else $node/text()
+    let $class := $node/@class
+    return <ref target="{$target}" title="{$title}" class="{$class}">{local:dispatch($node/text())}</ref>
+};
+
 (: <div> to <div> with attributes :)
-declare function local:div($node as element(div)) as element() {
+declare function local:div($node as element(html:div)) as element() {
   let $class := $node/@class
   let $id := $node/@id
   return
   <div class="{$class}" id="{$id}">{local:dispatch($node/node())}</div>
 };
 
+declare function local:i($node as element(i)) as element() {  
+    <hi rend="italic">{local:dispatch($node/node())}</hi>
+};
+
+declare function local:em($node as element(em)) as element() {  
+    <emph rend="italic">{local:dispatch($node/node())}</emph>
+};
+
+declare function local:b($node as element(b)) as element() {  
+    <hi rend="bold">{local:dispatch($node/node())}</hi>
+};
+
+declare function local:strong($node as element(strong)) as element() {  
+    <emph rend="bold">{local:dispatch($node/node())}</emph>
+};
+
+declare function local:br($node as element(br)) as element() {  
+    <lb/>
+};
+
 (: <hi> to <b>, <i>, or <span> :)
+(: to be transformed in from <i> to <hi rend="italic"> :)
 declare function local:hi($node as element(hi)) as element() {
   let $rend := $node/@rend
   return
@@ -65,25 +104,23 @@ declare function local:hi($node as element(hi)) as element() {
   else
     <span>{local:dispatch($node/node())}</span>
 };
+
 (: <quote> to <span> :)
-declare function local:quote($node as element(quote)) as element() {
-  let $rend := $node/@rend
-  return
-  if ($rend = 'blockquote') then
-    <blockquote>{local:dispatch($node/node())}</blockquote>
-  else
-    <q>{local:dispatch($node/node())}</q>
+(: OK to be transformed in from <blockquote> to <quote rend="blockquote"> :)
+declare function local:quote($node as element(blockquote)) as element() {
+    <quote>{local:dispatch($node/node())}</quote>
 };
 
 (: <q> to quote :)
-declare function local:q($node as element(q)) as element() {
+(: OK pas besoin :)
+(: declare function local:q($node as element(q)) as element() {
   <span class="quotes">&#8216;{local:dispatch($node/node())}&#8217;</span>
-};
+}; :)
 
 (: <body> to <div> with id attribute :)
-declare function local:body($node as element(body)) as element() {
+(: declare function local:body($node as element(html:body)) as element() {
   <div lang="la" id="tei-document">{local:dispatch($node/node())}</div>
-};
+}; :)
 
 (: 
  : my own
@@ -94,7 +131,7 @@ declare function local:body($node as element(body)) as element() {
  : @return for every item of the inventory, write a file into /TEI/ named after the name of the scrapped html file. 
  :)
 declare function local:writeArticles($refs as map(*)*) as document-node()* {
-  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI4/'
+  let $path := '/home/nicolas/ownCloud/General_instin/data/TEI_NSP/'
   for $ref in $refs
   return
     (: let $article := db:open("GIwget","item-002/remue.net/spip.php?article1524.html") :)
@@ -130,7 +167,7 @@ declare function local:getArticle( $article as element(), $ref as map(*) ) as el
   let $category := local:getCategory($article, $ref)
   let $listKeywords := <list><item>{local:getKeywords($article, $ref)}</item></list>
   return 
-  <TEI xml:id="item-{$num}" >
+  <TEI xmlns="http://www.tei-c.org/ns/1.0" xml:id="item-{$num}" >
      <teiHeader>
         <fileDesc>
                  <titleStmt>
