@@ -2,6 +2,7 @@ xquery version "3.1";
 
 declare default function namespace 'local' ;
 declare namespace csv = "http://basex.org/modules/csv";
+declare namespace tei = "http://www.tei-c.org/ns/1.0" ;
 
 (: déclare les options pour le serialiseur CSV:)
 let $options := map { 'separator': ';', 'header':"yes"}
@@ -72,21 +73,31 @@ let $images := map {
 'item-053':'http://i.imgur.com/PpXQWTTm.png',
 'item-054':'http://i.imgur.com/uctZxjYm.png',
 'item-055':'http://i.imgur.com/DEWwrJBm.png',
-'item-056':'http://i.imgur.com/y49bAUpm.png'
+'item-056':'http://i.imgur.com/y49bAUpm.png',
+'item-057':'http://i.imgur.com/EFQHRVq.png',
+'item-058':'http://i.imgur.com/eIhL7KD.png',
+'item-059':'http://i.imgur.com/9FxjotL.png',
+'item-060':'http://i.imgur.com/TzZgta3.png',
+'item-061':'http://i.imgur.com/NQVBhz4.png',
+'item-062':'http://i.imgur.com/j1BuI3x.png',
+'item-063':'http://i.imgur.com/SkzwnYH.png',
+'item-064':'http://i.imgur.com/4rAISLr.png',
+'item-065':'http://i.imgur.com/3BxHg1B.png',
+'item-066':'http://i.imgur.com/iLE4L9W.png'
 }
 
 (: ouvre la base XML:)
-let $TEI := db:open("GITEI4")
+let $TEI := db:open("TEI_NSP")
 
  
 (: construit un arbre XML à 2 niveaux (root/branche) :)
 let $toBeCsv :=  <itemList>{
-  for $item in $TEI/TEI
-    let $title := $item//title[1]
-    let $url := fn:string($item//publicationStmt/publisher/ref/@target)
-    let $author := $item//author
-    let $date := fn:string($item//publicationStmt/date/@when)
-    let $rubrique := map:get($rubriques, fn:data($item//profileDesc[1]/textClass[1]/catRef[1]/@target))
+  for $item in $TEI/tei:TEI
+    let $title := $item//*:title[1]
+    let $url := fn:string($item//*:publicationStmt/*:publisher/*:ref/@target)
+    let $author := $item//*:author
+    let $date := fn:string($item//*:publicationStmt/*:date/@when)
+    let $rubrique := map:get($rubriques, fn:data($item//*:profileDesc[1]/*:textClass[1]/*:catRef[1]/@target))
     let $thumbnail := map:get($images,   fn:data($item/@xml:id))
     
   return 
@@ -118,5 +129,5 @@ let $output := csv:serialize($toBeCsv, $options)
 
 (: écrit les données dans un fichier CSV :)
 return 
-    file:write-text("/Users/servannemonjour/ownCloud/General_instin/data/script/teicsv2.csv", $output)
+    file:write-text("/home/nicolas/ownCloud/General_instin/data/script/timeline_20170508.csv", $output)
 
